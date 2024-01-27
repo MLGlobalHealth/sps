@@ -1,0 +1,5 @@
+*.gif
+*.npy
+*.pdf
+*.csv
+**/__pycache__/*
