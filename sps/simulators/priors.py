@@ -32,6 +32,7 @@ def exponential(
     lam: Float,
     shape: Sequence[int],
 ) -> Float[Array, "..."]:
+    """Exponential parameterized by lambda `lam`."""
     return 1 / lam * random.exponential(key, shape)
 
 
@@ -40,4 +41,5 @@ def fixed(
     value: Float,
     shape: Sequence[int],
 ) -> Float[Array, "..."]:
+    """Fixed distribution."""
     return jnp.full(shape, value)

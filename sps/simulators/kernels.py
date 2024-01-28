@@ -30,7 +30,7 @@ def rbf(
     y: T.Locations,
     variance: T.Variance,
     lengthscale: T.Lengthscale,
-):
+) -> T.Covariance:
     """K(x, y) = variance * exp{-||x-y||^2 / (2 * lengthscale^2)}"""
     return variance * jnp.exp(-l2_dist_sq(x, y) / (2 * lengthscale**2))
 
@@ -41,7 +41,7 @@ def matern_3_2(
     y: T.Locations,
     variance: T.Variance,
     lengthscale: T.Lengthscale,
-):
+) -> T.Covariance:
     """K(x, y) = variance * (1 + √3 * ||x-y|| / lengthscale) * exp{-√3 * ||x-y|| / lengthscale}"""
     d = l2_dist_sq(x, y) ** (1 / 2)
     sqrt3 = 3.0 ** (1 / 2)
@@ -54,7 +54,7 @@ def matern_5_2(
     y: T.Locations,
     variance: T.Variance,
     lengthscale: T.Lengthscale,
-):
+) -> T.Covariance:
     """K(x, y) = variance * (1 + √5 * ||x-y|| / lengthscale + 5/3 * ||x-y||^2 / lengthscale^2) * exp{-√5 * ||x-y|| / lengthscale}"""
     dsq = l2_dist_sq(x, y)
     d = jnp.sqrt(dsq)
