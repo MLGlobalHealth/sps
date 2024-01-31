@@ -36,6 +36,15 @@ def dataloader(gp: GP, locations: ArrayLike, batch_size: int, approx: bool):
 gp = GP("matern_5_2", lengthscale=Prior("beta", {"a": 2.5, "b": 5}))
 loader = dataloader(gp, locations, batch_size, approx=True)
 var, ls, mu = next(loader)
+
+
+# build a 2D grid, 64x64 grid
+locations = build_grid([{"start": 0, "stop": 1, "num": 64}] * 2)
+
+
+# within IPython, speed test Kronecker (approx) vs. Cholesky methods 
+%timeit gp.simulate(locations, batch_size, approx=True) # ~7 ms
+%timeit gp.simulate(locations, batch_size, approx=False) # ~136 ms
 ````
 
 ## Development
