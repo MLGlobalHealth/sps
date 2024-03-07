@@ -29,7 +29,7 @@ batch_size = 64
 approx = True # approx uses Kronecker factorization instead of Cholesky
 lengthscales = [0.05, 0.1, 0.2, 0.3, 0.5]
 fig, axes = plt.subplots(len(lengthscales), 1)
-key = random.PRNGKey(42)
+key = random.key(42)
 for i, ls in enumerate(lengthscales):
     gp = GP("matern_3_2", ls=Prior("fixed", {"value": ls}))
     _var, _ls, _z, f = gp.simulate(key, locations, batch_size, approx)
@@ -49,13 +49,9 @@ loader = dataloader(key, gp, locations, batch_size, approx=True)
 var, ls, z, f = next(loader)
 
 
-# build a 2D grid, 64x64 grid
-locations = build_grid([{"start": 0, "stop": 1, "num": 64}] * 2)
-
-
 # within IPython, speed test Kronecker (approx) vs. Cholesky methods 
-key = random.PRNGKey(42)
-batch_size = 1024
+key, batch_size = random.key(42), 1024
+locations = build_grid([{"start": 0, "stop": 1, "num": 64}] * 2) # 64x64 grid
 %timeit gp.simulate(key, locations, batch_size, approx=True) # ~6 ms
 %timeit gp.simulate(key, locations, batch_size, approx=False) # ~57 ms
 ````
