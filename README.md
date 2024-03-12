@@ -1,6 +1,8 @@
 # Stochastic Process Simulators (sps)
 
 ## Install
+1. Install [jax](https://jax.readthedocs.io/en/latest/installation.html)
+2. Install the `sps` package from git:
 ```bash
 pip install git+ssh://git@github.com/MLGlobalHealth/sps.git
 ```
