@@ -90,7 +90,7 @@ def periodic(
     Returns:
         A covariance matrix.
     """
-    return var * jnp.exp(-2 / ls**2 * jnp.sin(jnp.pi * jnp.abs(x - y) / period) ** 2)
+    return var * jnp.exp(-2 / ls**2 * jnp.sin(jnp.pi * jnp.abs(x - y.T) / period) ** 2)
 
 
 @jit
