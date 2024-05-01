@@ -69,6 +69,7 @@ class GP:
         Returns:
             `var`, `ls`, `z`, and `f`.
         """
+        locations = locations[:, None] if locations.ndim == 1 else locations
         rng_var, rng_ls, rng_z = random.split(key, 3)
         num_locations = locations.size // locations.shape[-1]
         var = self.var.sample(rng_var)
