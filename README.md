@@ -25,6 +25,7 @@ from jax import random
 from sps.gp import GP
 from sps.priors import Prior
 from sps.utils import build_grid
+from sps.kernels import matern_3_2, matern_5_2
 
 
 # plot 5 samples from a collection of lengthscales
@@ -35,7 +36,7 @@ lengthscales = [0.05, 0.1, 0.2, 0.3, 0.5]
 fig, axes = plt.subplots(len(lengthscales), 1)
 key = random.key(42)
 for i, ls in enumerate(lengthscales):
-    gp = GP("matern_3_2", ls=Prior("fixed", {"value": ls}))
+    gp = GP(matern_3_2, ls=Prior("fixed", {"value": ls}))
     _var, _ls, _z, f = gp.simulate(key, locations, batch_size, approx)
     axes[i].plot(f.squeeze().T)
     axes[i].set_title(f"ls={ls}")
@@ -48,7 +49,7 @@ def dataloader(key, gp, locations, batch_size=64, approx=False):
         yield gp.simulate(rng, locations, batch_size, approx)
 
 
-gp = GP("matern_5_2", ls=Prior("beta", {"a": 2.5, "b": 5}))
+gp = GP(matern_5_2, ls=Prior("beta", {"a": 2.5, "b": 5}))
 loader = dataloader(key, gp, locations, batch_size, approx=True)
 var, ls, z, f = next(loader)
 
