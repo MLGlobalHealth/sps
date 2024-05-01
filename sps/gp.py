@@ -5,7 +5,7 @@ import jax.numpy as jnp
 from jax import Array, config, lax, random, vmap
 from jax.typing import ArrayLike
 
-from . import kernels
+from .kernels import Kernel, matern_3_2
 from .priors import Prior
 
 # improves numerical stability for small lengthscales
@@ -17,7 +17,7 @@ class GP:
     """Gaussian Process simulator.
 
     Args:
-        kernel: The name of a kernel from the `kernels` submodule.
+        kernel: A kernel from the `kernels` submodule.
         var: The variance prior. Distributions include those in
             `jax.random` as well as those in the `priors` submodule.
         ls: The lengthscale prior. Distributions include those in
@@ -27,12 +27,9 @@ class GP:
         An instance of the GP dataclass.
     """
 
-    kernel: str = "matern_3_2"
+    kernel: Kernel = matern_3_2
     var: Prior = Prior("fixed", {"value": 1})
     ls: Prior = Prior("beta", {"a": 2.5, "b": 6.0})
-
-    def __post_init__(self):
-        self.kernel_func = getattr(kernels, self.kernel)
 
     def simulate(
         self,
@@ -78,13 +75,13 @@ class GP:
         ls = self.ls.sample(rng_ls)
         z = random.normal(rng_z, shape=(batch_size, num_locations))
         vsample = vmap(kronecker if approx else cholesky, in_axes=[None] * 4 + [0])
-        f = vsample(self.kernel_func, locations, var, ls, z)  # vectorize over z
+        f = vsample(self.kernel, locations, var, ls, z)  # vectorize over z
         f = f.reshape(-1, *locations.shape[:-1], 1)  # batch x grid x 1
         return var, ls, z, f
 
 
 def cholesky(
-    kernel: kernels.Kernel,
+    kernel: Kernel,
     locations: ArrayLike,  # [..., D]
     var: float,
     ls: float,
@@ -115,7 +112,7 @@ def cholesky(
 
 
 def kronecker(
-    kernel: kernels.Kernel,
+    kernel: Kernel,
     locations: ArrayLike,  # [..., D]
     var: float,
     ls: float,
@@ -146,7 +143,7 @@ def kronecker(
 
 
 def _kronecker_Ls(
-    kernel: kernels.Kernel,
+    kernel: Kernel,
     locations: ArrayLike,
     var: float,
     ls: float,
