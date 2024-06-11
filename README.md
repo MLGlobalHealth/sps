@@ -43,22 +43,22 @@ for i, ls in enumerate(lengthscales):
 
 
 # create a simple (forever) dataloader
-def dataloader(key, gp, locations, batch_size=64, approx=False):
+def dataloader(key, gp, s, batch_size=64, approx=False):
     while True:
         rng, key = random.split(key)
-        yield gp.simulate(rng, locations, batch_size, approx)
+        yield gp.simulate(rng, s, batch_size, approx)
 
 
 gp = GP(matern_5_2, ls=Prior("beta", {"a": 2.5, "b": 5}))
-loader = dataloader(key, gp, locations, batch_size, approx=True)
+loader = dataloader(key, gp, s, batch_size, approx=True)
 var, ls, z, f = next(loader)
 
 
 # within IPython, speed test Kronecker (approx) vs. Cholesky methods 
 key, batch_size = random.key(42), 1024
-locations = build_grid([{"start": 0, "stop": 1, "num": 64}] * 2) # 64x64 grid
-%timeit gp.simulate(key, locations, batch_size, approx=True) # ~6 ms
-%timeit gp.simulate(key, locations, batch_size, approx=False) # ~57 ms
+s = build_grid([{"start": 0, "stop": 1, "num": 64}] * 2) # 64x64 grid
+%timeit gp.simulate(key, s, batch_size, approx=True) # ~6 ms
+%timeit gp.simulate(key, s, batch_size, approx=False) # ~57 ms
 ````
 
 ## Development
