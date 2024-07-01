@@ -108,7 +108,7 @@ def matern_3_2(
     Returns:
         A covariance matrix.
     """
-    d = l2_dist_sq(x, y) ** (1 / 2)
+    d = jnp.sqrt(l2_dist_sq(x, y))
     sqrt3 = 3.0 ** (1 / 2)
     return variance * (1 + sqrt3 * d / lengthscale) * jnp.exp(-sqrt3 * d / lengthscale)
 
