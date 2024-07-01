@@ -1,5 +1,5 @@
 import jax.numpy as jnp
-from jax import config, jit
+from jax import config, jit, vmap
 from jax.typing import ArrayLike
 
 # improves numerical stability for small lengthscales
@@ -28,7 +28,7 @@ def _prepare_dims(x: ArrayLike, y: ArrayLike) -> tuple[ArrayLike, ArrayLike]:
 
 @jit
 def l2_dist_sq(x: ArrayLike, y: ArrayLike) -> ArrayLike:
-    r"""L2 distance between two [..., D] arrays.
+    r"""L2 distance squared between two [..., D] arrays.
 
     Args:
         x: Input array of size `[..., D]`.
@@ -44,6 +44,22 @@ def l2_dist_sq(x: ArrayLike, y: ArrayLike) -> ArrayLike:
     _1_N_x, _1_N_y = jnp.ones(x.shape[0]), jnp.ones(y.shape[0])
     x_hat, y_hat = (x**2).sum(-1), (y**2).sum(-1)
     return jnp.outer(x_hat, _1_N_y) - 2 * x @ y.T + jnp.outer(_1_N_x, y_hat)
+
+
+@jit
+def l2_dist(x: ArrayLike, y: ArrayLike) -> ArrayLike:
+    r"""L2 distance between two [..., D] arrays.
+
+    Args:
+        x: Input array of size `[..., D]`.
+        y: Input array of size `[..., D]`.
+
+    Returns:
+        Matrix of all pairwise distances.
+    """
+    x, y = _prepare_dims(x, y)
+    diff = vmap(vmap(jnp.subtract, (None, 0)), (0, None))(x, y)
+    return jnp.linalg.norm(diff, axis=-1)
 
 
 @jit
@@ -108,7 +124,7 @@ def matern_3_2(
     Returns:
         A covariance matrix.
     """
-    d = jnp.sqrt(l2_dist_sq(x, y))
+    d = l2_dist(x, y)
     sqrt3 = 3.0 ** (1 / 2)
     return variance * (1 + sqrt3 * d / lengthscale) * jnp.exp(-sqrt3 * d / lengthscale)
 
@@ -131,8 +147,8 @@ def matern_5_2(
     Returns:
         A covariance matrix.
     """
-    dsq = l2_dist_sq(x, y)
-    d = jnp.sqrt(dsq)
+    d = l2_dist(x, y)
+    dsq = jnp.square(d)
     sqrt5 = jnp.sqrt(5.0)
     return (
         variance
