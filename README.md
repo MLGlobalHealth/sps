@@ -70,3 +70,6 @@ s = build_grid([{"start": 0, "stop": 1, "num": 64}] * 2) # 64x64 grid
 - Install `poetry`: `curl -sSL https://install.python-poetry.org | python3 -`
 - Setup env: `cd sps && poetry install`
 - Run tests: `poetry run pytest`
+- [Optional]: Install the package locally using `pip install -e .` from the git
+    root directory so that the version you're using in the current environment
+    is "live."
