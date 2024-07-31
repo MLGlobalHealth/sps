@@ -96,7 +96,7 @@ def periodic(
     y: ArrayLike,
     var: float,
     ls: float,
-    period: float = 2 * jnp.pi,
+    period: float = 0.5,  # ~2 cycles on unit interval
 ) -> ArrayLike:
     r"""Periodic kernel.
 
