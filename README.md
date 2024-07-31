@@ -66,7 +66,7 @@ s = build_grid([{"start": 0, "stop": 1, "num": 64}] * 2) # 64x64 grid
     - Install `pyenv`: `curl https://pyenv.run | bash`
     - Copy the lines it says to your `~/.bashrc` and reload `source ~/.bashrc`
     - Install Python 3.12: `pyenv install 3.12`
-- Create a virtualenv called `sps` using Python 3.12: `pyenv virtualenv 3.12 sps-dev`
+- Create a virtualenv called `sps-dev` using Python 3.12: `pyenv virtualenv 3.12 sps-dev`
 - Clone the repository and `cd` into it: `git clone git@github.com:MLGlobalHealth/sps.git && cd sps`
 - Inside the `sps` repository, tell `pyenv` to use the `sps-dev` virtualenv: `pyenv local sps-dev`
     - `pyenv local sps-dev` creates a `.python-version` file that tells `pyenv`
