@@ -85,9 +85,8 @@ class GP:
             period = self.period.sample(rng_period)
             kernel = Partial(self.kernel, period=period)
         sample = kronecker if approx else cholesky
-        f64 = jit(lambda x: jnp.float64(x))
         with enable_x64():  # TODO(danj): make this optional
-            f = sample(kernel, f64(locations), f64(var), f64(ls), f64(z), self.jitter)
+            f = sample(kernel, jnp.float64(locations), var, ls, z, self.jitter)
             f = jnp.float32(f)
         f = f.reshape(-1, *locations.shape[:-1], 1)  # batch x grid x 1
         return f, var, ls, period, z
