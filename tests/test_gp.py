@@ -10,7 +10,7 @@ from sps.kernels import matern_3_2, matern_5_2, periodic, rbf
 from sps.priors import Prior
 from sps.utils import build_grid
 
-config.update("jax_enable_x64", True)
+config.update("jax_enable_x64", True)  # For appoximation methods
 
 
 @pytest.mark.parametrize("ls", [0.1, 0.5, 1.0])
@@ -62,7 +62,7 @@ def test_gp(kernel, num_dims=1, dim_size=32, batch_size=3, seed=0):
     locations = build_grid([{"start": 0, "stop": 1, "num": dim_size}] * num_dims)
     gp = GP(kernel)
     key = random.key(seed)
-    _, _, _, f = gp.simulate(key, locations, batch_size)
+    f, *_ = gp.simulate(key, locations, batch_size)
     assert jnp.isfinite(f).all()
 
 
@@ -71,6 +71,6 @@ def test_gp_approx(ls, num_dims, dim_size=32, batch_size=3, seed=0):
     locations = build_grid([{"start": 0, "stop": 1, "num": dim_size}] * num_dims)
     gp = GP(ls=Prior("fixed", {"value": ls}))
     key = random.key(seed)
-    _, _, _, f = gp.simulate(key, locations, batch_size)
-    _, _, _, f_approx = gp.simulate(key, locations, batch_size, approx=True)
+    f, *_ = gp.simulate(key, locations, batch_size)
+    f_approx, *_ = gp.simulate(key, locations, batch_size, approx=True)
     assert jnp.allclose(f, f_approx)

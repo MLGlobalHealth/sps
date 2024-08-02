@@ -37,7 +37,7 @@ fig, axes = plt.subplots(len(lengthscales), 1)
 key = random.key(42)
 for i, ls in enumerate(lengthscales):
     gp = GP(matern_3_2, ls=Prior("fixed", {"value": ls}))
-    _var, _ls, _z, f = gp.simulate(key, s, batch_size, approx)
+    f, *_ = gp.simulate(key, s, batch_size, approx)
     axes[i].plot(s, f.squeeze().T)
     axes[i].set_title(f"ls={ls}")
 

@@ -1,8 +1,9 @@
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
+import jax
 import jax.numpy as jnp
-from jax import Array, lax, random, vmap
+from jax import Array, jit, lax, random, vmap
 from jax.tree_util import Partial
 from jax.typing import ArrayLike
 
@@ -29,7 +30,7 @@ class GP:
     kernel: Callable = matern_3_2
     var: Prior = Prior("fixed", {"value": 1})
     ls: Prior = Prior("beta", {"a": 2.5, "b": 6.0})
-    period: Prior = Prior("fixed", {"value": 2 * jnp.pi})
+    period: Prior = Prior("fixed", {"value": 1.0})
 
     def simulate(
         self,
@@ -37,7 +38,7 @@ class GP:
         locations: ArrayLike,  # [..., D]
         batch_size: int = 1,
         approx: bool = False,
-    ) -> tuple[Array, Array, Array, Array]:
+    ) -> tuple[Array, Array, Array, None | Array, Array]:
         r"""Simulate `batch_size` realizations of the GP at `locations`.
 
         Each batch is sampled as follows:
@@ -67,7 +68,7 @@ class GP:
                 otherwise use "exact" Cholesky decomposition.
 
         Returns:
-            `var`, `ls`, `z`, and `f`.
+            `f`, `var`, `ls`, `period`, and `z`.
         """
         locations = locations[:, None] if locations.ndim == 1 else locations
         rng_var, rng_ls, rng_period, rng_z = random.split(key, 4)
@@ -75,14 +76,15 @@ class GP:
         var = self.var.sample(rng_var)
         ls = self.ls.sample(rng_ls)
         z = random.normal(rng_z, shape=(batch_size, num_locations))
-        vsample = vmap(kronecker if approx else cholesky, in_axes=[None] * 4 + [0])
         kernel = self.kernel
+        period = None
         if self.kernel.__name__ == "periodic":
             period = self.period.sample(rng_period)
             kernel = Partial(self.kernel, period=period)
-        f = vsample(kernel, locations, var, ls, z)  # vectorize over z
+        sample = kronecker if approx else cholesky
+        f = sample(kernel, locations, var, ls, z)  # vectorize over z
         f = f.reshape(-1, *locations.shape[:-1], 1)  # batch x grid x 1
-        return var, ls, z, f
+        return f, var, ls, period, z
 
 
 def cholesky(
@@ -90,7 +92,7 @@ def cholesky(
     locations: ArrayLike,  # [..., D]
     var: float,
     ls: float,
-    z: Array,
+    z: Array,  # [B, L]
     noise: float = 1e-5,
 ) -> Array:
     """Creates samples using Cholesky covariance factorization.
@@ -112,8 +114,9 @@ def cholesky(
     """
     num_locations = locations.size // locations.shape[-1]
     K = kernel(locations, locations, var, ls) + noise * jnp.eye(num_locations)
-    L = jnp.linalg.cholesky(K)
-    return L @ z
+    jax.debug.print("{}", K)
+    L = lax.linalg.cholesky(K)
+    return jnp.einsum("ij,bj->bi", L, z)
 
 
 def kronecker(
@@ -121,7 +124,7 @@ def kronecker(
     locations: ArrayLike,  # [..., D]
     var: float,
     ls: float,
-    z: Array,
+    z: Array,  # [B, L]
     noise: float = 1e-5,
 ) -> Array:
     """Creates samples using Kronecker covariance factorization.
@@ -144,7 +147,7 @@ def kronecker(
         `Lz`: samples from the kernel combined with a random vector `z`.
     """
     Ls = _kronecker_Ls(kernel, locations, var, ls, noise)
-    return _kronecker_mvprod(Ls, z)
+    return vmap(_kronecker_mvprod, in_axes=(None, 0))(Ls, z)
 
 
 def _kronecker_Ls(
@@ -172,6 +175,7 @@ def _kronecker_Ls(
     return Ls
 
 
+@jit
 def _kronecker_mvprod(Ls: Sequence[Array], z: Array) -> Array:
     """Linear Kronecker product of `Ls` with vector `z`.
 
