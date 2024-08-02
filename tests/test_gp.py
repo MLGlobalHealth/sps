@@ -3,14 +3,12 @@ from functools import reduce
 
 import jax.numpy as jnp
 import pytest
-from jax import config, random
+from jax import random
 
 from sps.gp import GP, _kronecker_Ls, _kronecker_mvprod
 from sps.kernels import matern_3_2, matern_5_2, periodic, rbf
 from sps.priors import Prior
 from sps.utils import build_grid
-
-config.update("jax_enable_x64", True)  # For appoximation methods
 
 
 @pytest.mark.parametrize("ls", [0.1, 0.5, 1.0])

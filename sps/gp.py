@@ -2,12 +2,15 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 import jax.numpy as jnp
-from jax import Array, jit, lax, random, vmap
+from jax import Array, config, jit, lax, random, vmap
 from jax.tree_util import Partial
 from jax.typing import ArrayLike
 
 from .kernels import matern_3_2
 from .priors import Prior
+
+# for numerical stability
+config.update("jax_enable_x64", True)
 
 
 @dataclass
