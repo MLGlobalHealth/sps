@@ -1,9 +1,6 @@
 import jax.numpy as jnp
-from jax import config, jit, vmap
+from jax import jit, vmap
 from jax.typing import ArrayLike
-
-# for numerical stability
-config.update("jax_enable_x64", True)
 
 
 @jit

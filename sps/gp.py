@@ -2,15 +2,13 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 import jax.numpy as jnp
-from jax import Array, config, jit, lax, random, vmap
+from jax import Array, jit, lax, random, vmap
+from jax.experimental import enable_x64
 from jax.tree_util import Partial
 from jax.typing import ArrayLike
 
 from .kernels import matern_3_2
 from .priors import Prior
-
-# for numerical stability
-config.update("jax_enable_x64", True)
 
 
 @dataclass
@@ -87,7 +85,9 @@ class GP:
             period = self.period.sample(rng_period)
             kernel = Partial(self.kernel, period=period)
         sample = kronecker if approx else cholesky
-        f = sample(kernel, locations, var, ls, z, self.jitter)
+        with enable_x64():
+            f = sample(kernel, locations, var, ls, z, self.jitter)
+            f = jnp.float32(f)  # TODO(danj): make this optional
         f = f.reshape(-1, *locations.shape[:-1], 1)  # batch x grid x 1
         return f, var, ls, period, z
 
