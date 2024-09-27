@@ -28,9 +28,9 @@ from sps.utils import build_grid
 from sps.kernels import matern_3_2, matern_5_2
 
 
-# plot 5 samples from a collection of lengthscales
+# plot samples from a collection of lengthscales
 s = build_grid([{"start": 0, "stop": 1, "num": 128}])
-batch_size = 64
+batch_size = 4
 approx = True # approx uses Kronecker factorization instead of Cholesky
 lengthscales = [0.05, 0.1, 0.2, 0.3, 0.5]
 fig, axes = plt.subplots(len(lengthscales), 1)
