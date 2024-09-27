@@ -75,6 +75,15 @@ operations can often help, but be warned that this will double memory usage.
 from jax import config
 config.update("jax_enable_x64", True)
 ```
+Or, use the experimental context manager, which restricts 64-bit precision to
+the local execution block:
+```python
+from jax.experimental import enable_x64
+
+with enable_x64():
+    # Do something in 64-bit precision
+# Back to default 32-bit precision
+```
 
 ## Development Setup
 - Install Python 3.12 with `pyenv`:
