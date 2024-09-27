@@ -69,14 +69,14 @@ s = build_grid([{"start": 0, "stop": 1, "num": 64}] * 2) # 64x64 grid
 More examples can be found [here](https://github.com/MLGlobalHealth/sps/tree/main/examples).
 
 ## Gotchas
-- Small lengthscales can cause numerical instability; enabiling 64-bit floating
+Small lengthscales can cause numerical instability; enabiling 64-bit floating
 operations can often help, but be warned that this will double memory usage.
 ```python
 from jax import config
 config.update("jax_enable_x64", True)
 ```
-Or, use the experimental context manager, which restricts 64-bit precision to
-the local execution block:
+You can also use the experimental context manager, which restricts 64-bit
+precision to the local execution block:
 ```python
 from jax.experimental import enable_x64
 
