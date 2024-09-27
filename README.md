@@ -15,7 +15,7 @@ cd sps
 pdoc --docformat google --math sps
 ```
 
-## Examples
+## Demo
 ```python
 import matplotlib.pyplot as plt
 
@@ -66,6 +66,7 @@ s = build_grid([{"start": 0, "stop": 1, "num": 64}] * 2) # 64x64 grid
 %timeit gp.simulate(rng, s, batch_size, approx=True) # ~5 ms
 %timeit gp.simulate(rng, s, batch_size, approx=False) # ~50 ms
 ````
+More examples can be found [here](https://github.com/MLGlobalHealth/sps/tree/main/examples).
 
 ## Gotchas
 - Small lengthscales can cause numerical instability; enabiling 64-bit floating
