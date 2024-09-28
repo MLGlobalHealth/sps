@@ -111,6 +111,27 @@ def periodic(
 
 
 @jit
+def exponential(
+    x: ArrayLike,
+    y: ArrayLike,
+    var: float,
+    ls: float,
+) -> ArrayLike:
+    r"""Exponential kernel. Alias of Matern 1/2 kernel.
+
+    $K(x, y) = \text{var}\cdot\left(-\frac{\lVert x-y\rVert}{\text{ls}}\right)$
+
+    Args:
+        x: Input array of size `[..., D]`.
+        y: Input array of size `[..., D]`.
+
+    Returns:
+        A covariance matrix.
+    """
+    return matern_1_2(x, y, var, ls)
+
+
+@jit
 def matern_1_2(
     x: ArrayLike,
     y: ArrayLike,
@@ -128,9 +149,8 @@ def matern_1_2(
     Returns:
         A covariance matrix.
     """
-    d = l2_dist(x, y)
-    sqrt3 = 3.0 ** (1 / 2)
-    return jnp.sqrt(var) * (1 + sqrt3 * d / ls) * jnp.exp(-sqrt3 * d / ls)
+    x, y = _prepare_dims(x, y)
+    return jnp.sqrt(var) * jnp.exp(-l2_dist(x, y) / ls)
 
 
 @jit
