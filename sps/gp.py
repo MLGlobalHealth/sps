@@ -98,7 +98,7 @@ def cholesky(
     var: Array,
     ls: Array,
     z: Array,  # [B, L]
-    noise: float = 1e-5,
+    jitter: float = 1e-5,
 ) -> Array:
     """Creates samples using Cholesky covariance factorization.
 
@@ -118,7 +118,7 @@ def cholesky(
         `Lz`: samples from the kernel combined with a random vector `z`.
     """
     num_locations = locations.size // locations.shape[-1]
-    K = kernel(locations, locations, var, ls) + noise * jnp.eye(num_locations)
+    K = kernel(locations, locations, var, ls) + jitter * jnp.eye(num_locations)
     L = lax.linalg.cholesky(K)
     return jnp.einsum("ij,bj->bi", L, z)
 
@@ -129,7 +129,7 @@ def kronecker(
     var: Array,
     ls: Array,
     z: Array,  # [B, L]
-    noise: float = 1e-5,
+    jitter: float = 1e-5,
 ) -> Array:
     """Creates samples using Kronecker covariance factorization.
 
@@ -150,7 +150,7 @@ def kronecker(
     Returns:
         `Lz`: samples from the kernel combined with a random vector `z`.
     """
-    Ls = _kronecker_Ls(kernel, locations, var, ls, noise)
+    Ls = _kronecker_Ls(kernel, locations, var, ls, jitter)
     return vmap(_kronecker_mvprod, in_axes=(None, 0))(Ls, z)
 
 
@@ -159,7 +159,7 @@ def _kronecker_Ls(
     locations: ArrayLike,
     var: float,
     ls: float,
-    noise: float = 1e-5,
+    jitter: float = 1e-5,
 ) -> Sequence[Array]:
     """Calculates Cholesky decomposition of each dimension in covariance matrix.
 
@@ -174,7 +174,7 @@ def _kronecker_Ls(
     for dim, dim_size in enumerate(locations.shape[:-1]):
         _stop = stop.at[dim].set(dim_size)
         axis = lax.slice(locations[..., dim], start, _stop).squeeze()[..., jnp.newaxis]
-        K = kernel(axis, axis, var, ls) + noise * jnp.eye(dim_size)
+        K = kernel(axis, axis, var, ls) + jitter * jnp.eye(dim_size)
         Ls += [jnp.linalg.cholesky(K)]
     return Ls
 
