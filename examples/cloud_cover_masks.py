@@ -3,6 +3,7 @@ import jax.numpy as jnp
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from jax import random
+
 from sps.gp import GP
 from sps.kernels import matern_1_2
 from sps.priors import Prior
