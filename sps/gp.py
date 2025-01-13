@@ -26,7 +26,7 @@ class GP:
             stabilize decomposition.
 
     Returns:
-        An instance of the GP dataclass.
+        An instance of the `GP` dataclass.
     """
 
     kernel: Callable = matern_3_2
@@ -37,7 +37,7 @@ class GP:
 
     def simulate(
         self,
-        key: Array,
+        rng: Array,
         locations: ArrayLike,  # [..., D]
         batch_size: int = 1,
         approx: bool = False,
@@ -62,7 +62,7 @@ class GP:
         by sampling `(batch_size, num_locations)` `z`s for each `L`.
 
         Args:
-            key: A psuedo-random number generator from `jax.random`.
+            rng: A psuedo-random number generator from `jax.random`.
             locations: An array of locations where the last dimension
                 is the dimension of single location, i.e. if a location
                 is 3 dimensional, the last dimension of the array is 3.
@@ -74,7 +74,7 @@ class GP:
             `f`, `var`, `ls`, `period`, and `z`.
         """
         locations = locations[:, None] if locations.ndim == 1 else locations
-        rng_var, rng_ls, rng_period, rng_z = random.split(key, 4)
+        rng_var, rng_ls, rng_period, rng_z = random.split(rng, 4)
         num_locations = locations.size // locations.shape[-1]
         var = self.var.sample(rng_var)
         ls = self.ls.sample(rng_ls)
