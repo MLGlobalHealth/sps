@@ -45,7 +45,7 @@ class LatticeSIR:
         init_locs = random.choice(rng_init, math.prod(dims), (num_init,), replace=False)
         # initialize state array: 0 = susceptible, 1 = infected, -1 = recovered
         state = jnp.zeros(dims).at[jnp.unravel_index(init_locs, dims)].set(1.0)
-        kernel = jit(inv_dist_sq_kernel)(self.kernel_width)[None, None, ...]
+        kernel = inv_dist_sq_kernel(self.kernel_width)[None, None, ...]
 
         @jit
         def step(rng, state):

@@ -2,7 +2,7 @@ from collections.abc import Sequence
 
 import jax
 import jax.numpy as jnp
-from jax import random
+from jax import jit, random
 from jax.typing import ArrayLike
 
 
@@ -74,8 +74,8 @@ def random_subgrid(
     )
 
 
+@jit
 def inv_dist_sq_kernel(width: int = 7):
-    assert width % 2 == 1, "Kernel size must be odd."
     center = width // 2
     x = y = jnp.arange(width) - center
     xx, yy = jnp.meshgrid(x, y)
