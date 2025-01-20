@@ -26,7 +26,7 @@ class LatticeSIR:
         An instance of the `LatticeSIR` dataclass.
     """
 
-    beta: Prior = Prior("beta", {"a": 5, "b": 10})
+    beta: Prior = Prior("beta", {"a": 2.0, "b": 8.0})
     gamma: Prior = Prior("inverse_gamma", {"alpha": 5, "beta": 0.4})
     num_init: Prior = Prior("uniform", {"minval": 1, "maxval": 5})
     kernel_width: int = 9
