@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import sys
-
 import matplotlib.pyplot as plt
 from jax import random
 from matplotlib.animation import FuncAnimation
@@ -11,12 +9,12 @@ from sps.sir import LatticeSIR
 
 
 def main():
-    rng = random.key(int(sys.argv[1]))
+    rng = random.key(42)
     dims = (64, 64)
     num_steps = 25
     beta = Prior("beta", {"a": 2, "b": 8})  # transmission prior
     gamma = Prior("inverse_gamma", {"alpha": 5, "beta": 0.4})
-    num_init = Prior("uniform", {"minval": 1, "maxval": 5})
+    num_init = Prior("randint", {"minval": 1, "maxval": 5})
     sir = LatticeSIR(beta, gamma)
     steps, beta, gamma, num_init = sir.simulate(rng, dims, num_steps)
     beta, gamma = float(beta[0]), float(gamma[0])  # Extract scalar values

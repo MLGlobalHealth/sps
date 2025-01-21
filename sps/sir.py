@@ -28,7 +28,7 @@ class LatticeSIR:
 
     beta: Prior = Prior("beta", {"a": 2.0, "b": 8.0})
     gamma: Prior = Prior("inverse_gamma", {"alpha": 5, "beta": 0.4})
-    num_init: Prior = Prior("uniform", {"minval": 1, "maxval": 5})
+    num_init: Prior = Prior("randint", {"minval": 1, "maxval": 5})
     kernel_width: int = 9
 
     def simulate(
@@ -41,7 +41,7 @@ class LatticeSIR:
         rng_beta, rng_gamma, rng_num_init, rng_init, rng = random.split(rng, 5)
         beta = self.beta.sample(rng_beta)
         gamma = self.gamma.sample(rng_gamma)
-        num_init = int(jnp.round(self.num_init.sample(rng_num_init, (1,)))[0])
+        num_init = int(self.num_init.sample(rng_num_init, (1,))[0])
         init_locs = random.choice(rng_init, math.prod(dims), (num_init,), replace=False)
         # initialize state array: 0 = susceptible, 1 = infected, -1 = recovered
         state = jnp.zeros(dims).at[jnp.unravel_index(init_locs, dims)].set(1.0)
