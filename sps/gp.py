@@ -1,5 +1,5 @@
-from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from typing import Callable, Sequence, Optional
 
 import jax.numpy as jnp
 from jax import Array, jit, lax, random, vmap
@@ -32,7 +32,7 @@ class GP:
     kernel: Callable = matern_3_2
     var: Prior = Prior("fixed", {"value": 1})
     ls: Prior = Prior("beta", {"a": 2.5, "b": 6.0})
-    period: Prior = Prior("fixed", {"value": 1.0})
+    period: Optional[Prior] = None
     jitter: float = 1e-5
 
     def simulate(
@@ -81,7 +81,7 @@ class GP:
         z = random.normal(rng_z, shape=(batch_size, num_locations))
         kernel = self.kernel
         period = jnp.array(jnp.inf)
-        if self.kernel.__name__ == "periodic":
+        if self.period is not None:
             period = self.period.sample(rng_period)
             kernel = Partial(self.kernel, period=period)
         sample = kronecker if approx else cholesky
