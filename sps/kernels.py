@@ -1,5 +1,5 @@
 import jax.numpy as jnp
-from jax import jit, vmap
+from jax import jit
 from jax.typing import ArrayLike
 
 
@@ -25,22 +25,22 @@ def _prepare_dims(x: ArrayLike, y: ArrayLike) -> tuple[ArrayLike, ArrayLike]:
 
 @jit
 def l2_dist_sq(x: ArrayLike, y: ArrayLike) -> ArrayLike:
-    r"""L2 distance squared between two [..., D] arrays.
+    r"""Squared L2 distance between two [..., D] arrays.
+
+    .. note::
+        This is more numerically stable than the factorization
+        trick: ||a + b||^2 = ||a||^2 + ||b||^2 - 2*||a||*||b||.
 
     Args:
         x: Input array of size `[..., D]`.
         y: Input array of size `[..., D]`.
 
-    Uses $\mathbf{D}=\mathbf{\hat{x}}\mathbf{1}^\intercal_{N_y}-2\mathbf{XY}^\intercal-1_{N_x}\mathbf{\hat{y}}^\intercal$
-    from Probabilistic Machine Learning by Kevin Murphy, p.245.
-
     Returns:
         Matrix of all pairwise distances.
     """
     x, y = _prepare_dims(x, y)
-    _1_N_x, _1_N_y = jnp.ones(x.shape[0]), jnp.ones(y.shape[0])
-    x_hat, y_hat = (x**2).sum(-1), (y**2).sum(-1)
-    return jnp.outer(x_hat, _1_N_y) - 2 * x @ y.T + jnp.outer(_1_N_x, y_hat)
+    d = x[:, None, :] - y[None, :, :]
+    return jnp.sum(d**2, axis=-1)
 
 
 @jit
@@ -55,13 +55,8 @@ def l2_dist(x: ArrayLike, y: ArrayLike) -> ArrayLike:
         Matrix of all pairwise distances.
     """
     x, y = _prepare_dims(x, y)
-    diff = outer_subtract(x, y)
-    return jnp.linalg.norm(diff, axis=-1)
-
-
-@jit
-def outer_subtract(x: ArrayLike, y: ArrayLike) -> ArrayLike:
-    return vmap(vmap(jnp.subtract, (None, 0)), (0, None))(x, y)
+    d = x[:, None, :] - y[None, :, :]
+    return jnp.linalg.norm(d, axis=-1)
 
 
 @jit
