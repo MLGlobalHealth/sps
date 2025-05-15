@@ -1,5 +1,5 @@
 import jax.numpy as jnp
-from jax import jit
+from jax import jit, vmap
 from jax.typing import ArrayLike
 
 
@@ -191,3 +191,64 @@ def matern_5_2(
     dsq = jnp.square(d)
     sqrt5 = jnp.sqrt(5.0)
     return var * (1 + sqrt5 * d / ls + 5 / 3 * dsq / ls**2) * jnp.exp(-sqrt5 * d / ls)
+
+
+@jit
+def great_circle_dist(x: ArrayLike, y: ArrayLike) -> ArrayLike:
+    r"""Great circle distance on a sphere between two [..., 2] arrays.
+
+    Inputs are assumed to be pairs of (longitude, latitude) in degrees,
+    outputs are also returned in degrees.
+
+    Args:
+        x: Input array of size `[..., 2]`.
+        y: Input array of size `[..., 2]`.
+
+    Returns:
+        Matrix of all pairwise distances.
+    """
+
+    def d(x, y):
+        x_lon, x_lat = x
+        y_lon, y_lat = y
+        x_lon, x_lat, y_lon, y_lat = map(jnp.deg2rad, (x_lon, x_lat, y_lon, y_lat))
+
+        d_lon = jnp.abs(x_lon - y_lon)
+
+        sin = jnp.sin
+        cos = jnp.cos
+
+        arc_length = jnp.atan2(
+            jnp.sqrt(
+                (cos(y_lat) * sin(d_lon)) ** 2
+                + (cos(x_lat) * sin(y_lat) - sin(x_lat) * cos(y_lat) * cos(d_lon)) ** 2
+            ),
+            sin(x_lat) * sin(y_lat) + cos(x_lat) * cos(y_lat) * cos(d_lon),
+        )
+
+        return jnp.rad2deg(arc_length)
+
+    assert x.shape[-1] == y.shape[-1] == 2, "Input arrays must be of shape [..., 2]"
+    x, y = _prepare_dims(x, y)
+    return vmap(vmap(d, in_axes=(None, 0)), in_axes=(0, None))(x, y)
+
+
+@jit
+def geo_exponential(
+    x: ArrayLike,
+    y: ArrayLike,
+    var: float,
+    ls: float,
+) -> ArrayLike:
+    r"""Geodesic exponential kernel, that is an exponential kernel with great circle distance.
+
+    $K(x, y) = \text{var}\cdot\exp\left(-\frac{\lVert x-y\rVert}_{geo}{\text{ls}}\right)$
+
+    Args:
+        x: Input array of size `[..., 2]`.
+        y: Input array of size `[..., 2]`.
+
+    Returns:
+        A covariance matrix.
+    """
+    return var * jnp.exp(-great_circle_dist(x, y) / ls)
