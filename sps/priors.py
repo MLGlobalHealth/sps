@@ -146,3 +146,23 @@ def fixed(
         A fixed sample of shape `shape`.
     """
     return jnp.full(shape, value)
+
+
+def uniform(
+    rng: Array,
+    minval: float,
+    maxval: float,
+    shape: Sequence[int],
+) -> Array:
+    """Uniform distribution.
+
+    Args:
+        rng: A psuedo-random number generator from `jax.random`.
+        minval: min value which can be generated.
+        maxval: max value which can be generated.
+        shape: Output shape of sample(s).
+
+    Returns:
+        A sample of shape `shape`.
+    """
+    return random.uniform(rng, shape, minval=minval, maxval=maxval)
