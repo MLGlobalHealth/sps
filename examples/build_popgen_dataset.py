@@ -14,7 +14,6 @@ def main(args):
     popgen = PopGen()
     N, B, T, C, (H, W) = args.num_batches, args.batch_size, args.num_steps, 1, args.dims
     mm = np.memmap(args.path, dtype=np.float32, mode="w+", shape=(N, B, T, C, H, W))
-    offset = 0
     for i in tqdm(range(N), unit="batches"):
         rng_i, rng = random.split(rng)
         prevalences, _ = popgen.simulate(
@@ -26,8 +25,7 @@ def main(args):
             args.dims,
             wrap_edges=True,
         )
-        mm[offset : offset + B] = prevalences
-        offset += B
+        mm[i : i + 1] = prevalences
         if i % args.flush_every_n == 0:
             mm.flush()
     print(f"Finished! Saved to {args.path}")
