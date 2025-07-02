@@ -40,7 +40,7 @@ class PopGen:
 
     migration: Prior = Prior("uniform", {"minval": 10**-3.3, "maxval": 10**-1.3})
     mutation: Prior = Prior("uniform", {"minval": 10e-6, "maxval": 1e-3})
-    population: Prior = Prior("fixed", {"value": 1})
+    population: Prior = Prior("fixed", {"value": 1000})
 
     def simulate(
         self,
