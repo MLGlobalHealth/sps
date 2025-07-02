@@ -14,6 +14,7 @@ def main(args):
     rng = random.key(args.seed)
     popgen = PopGen()
     N, B, T, C, (H, W) = args.num_batches, args.batch_size, args.num_steps, 1, args.dims
+    # NOTE: you can load this dataset with np.load(args.path, mmap_mode='r')
     mm = open_memmap(args.path, dtype=np.float32, mode="w+", shape=(N, B, T, C, H, W))
     for i in tqdm(range(N), unit="batches"):
         rng_i, rng = random.split(rng)
