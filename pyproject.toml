@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sps"
-version = "0.1.0"
+version = "0.1.1"
 description = "Stochastic Process Simulators"
 authors = ["Daniel Jenson <daniel.a.jenson@gmail.com>"]
 readme = "README.md"
