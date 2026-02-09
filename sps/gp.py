@@ -2,8 +2,7 @@ from dataclasses import dataclass
 from typing import Callable, Optional, Sequence
 
 import jax.numpy as jnp
-from jax import Array, jit, lax, random, vmap
-from jax.experimental import enable_x64
+from jax import Array, enable_x64, jit, lax, random, vmap
 from jax.tree_util import Partial
 from jax.typing import ArrayLike
 
