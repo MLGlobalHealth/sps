@@ -4,14 +4,15 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from jax import random
 
-from sps.gp import GP
-from sps.kernels import matern_1_2, matern_3_2, matern_5_2, periodic, rbf
-from sps.priors import Prior
-from sps.utils import build_grid
+from dl4bi_sps.gp import GP
+from dl4bi_sps.kernels import matern_1_2, matern_3_2, matern_5_2, periodic, rbf
+from dl4bi_sps.priors import Prior
+from dl4bi_sps.utils import build_grid
 
 
 # Parameters are based on Heaton, et al. benchmark: https://tinyurl.com/heaton-params
 def main():
+    """Generate and save a 2D Gaussian process kernel visualization."""
     W, H = 150, 90
     rng = random.key(42)
     rng_sim, rng_noise = random.split(rng)

@@ -9,10 +9,15 @@ from jax import random
 from numpy.lib.format import open_memmap
 from tqdm import tqdm
 
-from sps.popgen import PopGen, PopGenState
+from dl4bi_sps.popgen import PopGen, PopGenState
 
 
 def main(args):
+    """Generate population genetics trajectories and write them to disk.
+
+    Args:
+        args: Parsed command-line arguments.
+    """
     rng = random.key(args.seed)
     popgen = PopGen()
     N, B, T, C, (H, W) = (
@@ -58,6 +63,14 @@ def main(args):
 
 
 def parse_args(argv):
+    """Parse command-line arguments for dataset generation.
+
+    Args:
+        argv: Raw command-line arguments.
+
+    Returns:
+        Parsed argument namespace.
+    """
     parser = argparse.ArgumentParser(
         prog=argv[0],
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,

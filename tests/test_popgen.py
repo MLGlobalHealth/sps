@@ -1,9 +1,10 @@
 from jax import random
 
-from sps.popgen import PopGen
+from dl4bi_sps.popgen import PopGen
 
 
 def test_popgen():
+    """Verify the population genetics simulator returns expected tensor shapes."""
     rng = random.key(42)
     num_warmup = 100
     num_steps = 16
@@ -18,12 +19,13 @@ def test_popgen():
         batch_size,
         dims,
     )
-    assert prevalences.shape == (batch_size, num_steps, 1, *dims)
+    assert prevalences.shape == (batch_size, 1, num_steps, *dims)
     assert state.prevalence.shape == (batch_size, 1, *dims)
     assert (state.prevalence.sum(axis=(1, 2, 3)) > 0).all()
 
 
 def test_popgen_speed(benchmark):
+    """Benchmark the population genetics simulator and validate the final state."""
     rng = random.key(42)
     num_warmup = 200000
     num_steps = 1

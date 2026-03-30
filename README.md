@@ -1,12 +1,12 @@
-# Stochastic Process Simulators (sps)
+# Stochastic Process Simulators (`dl4bi-sps`)
 
 ## Install
-Install with the appropriate command. If JAX isn't installed already, we recommend using one of the `dl4bi-sps[<jax-version>]` installs. The distribution name is `dl4bi-sps`, while the import remains `sps`.
+Install with the appropriate command. If JAX isn't installed already, we recommend using one of the `dl4bi-sps[<jax-version>]` installs. The distribution name is `dl4bi-sps`, and the import package is `dl4bi_sps`.
 ```bash
-pip install dl4bi-sps # import sps
-pip install dl4bi-sps[cpu] # import sps + jax for CPU
-pip install dl4bi-sps[cuda12] # import sps + jax for CUDA-12
-pip install dl4bi-sps[cuda13] # import sps + jax for CUDA-13
+pip install dl4bi-sps # import dl4bi_sps
+pip install dl4bi-sps[cpu] # import dl4bi_sps + jax for CPU
+pip install dl4bi-sps[cuda12] # import dl4bi_sps + jax for CUDA-12
+pip install dl4bi-sps[cuda13] # import dl4bi_sps + jax for CUDA-13
 ```
 
 ## View Documentation (Locally)
@@ -14,7 +14,7 @@ pip install dl4bi-sps[cuda13] # import sps + jax for CUDA-13
 git clone git@github.com:MLGlobalHealth/sps.git
 cd sps
 uv sync --extra {cpu,cuda12,cuda13}
-uv run --with pdoc pdoc --docformat google --math sps
+uv run --with pdoc pdoc --docformat google --math dl4bi_sps
 ```
 
 ## Demo
@@ -24,10 +24,10 @@ import matplotlib.pyplot as plt
 import jax
 from jax import random
 
-from sps.gp import GP
-from sps.priors import Prior
-from sps.utils import build_grid
-from sps.kernels import matern_3_2, matern_5_2
+from dl4bi_sps.gp import GP
+from dl4bi_sps.priors import Prior
+from dl4bi_sps.utils import build_grid
+from dl4bi_sps.kernels import matern_3_2, matern_5_2
 
 rng = random.key(42)
 
@@ -93,7 +93,7 @@ with jax.enable_x64():
 - Run the test suite: `uv run pytest`
 
 `uv sync` creates a local `.venv/` and installs the project in editable mode,
-so changes in `sps/` are reflected immediately.
+so changes in `dl4bi_sps/` are reflected immediately.
 
 ## Build and Publish to PyPI
 1. Bump the package version:
@@ -120,8 +120,8 @@ UV_PUBLISH_TOKEN=$PYPI_TOKEN uv publish
 
 5. Smoke-test the published install targets in fresh environments:
 ```bash
-uv run --isolated --with "dl4bi-sps==<version>" --no-project -- python -c "import sps"
-uv run --isolated --with "dl4bi-sps[cpu]==<version>" --no-project -- python -c "import sps"
-uv run --isolated --with "dl4bi-sps[cuda12]==<version>" --no-project -- python -c "import sps"
-uv run --isolated --with "dl4bi-sps[cuda13]==<version>" --no-project -- python -c "import sps"
+uv run --isolated --with "dl4bi-sps==<version>" --no-project -- python -c "import dl4bi_sps"
+uv run --isolated --with "dl4bi-sps[cpu]==<version>" --no-project -- python -c "import dl4bi_sps"
+uv run --isolated --with "dl4bi-sps[cuda12]==<version>" --no-project -- python -c "import dl4bi_sps"
+uv run --isolated --with "dl4bi-sps[cuda13]==<version>" --no-project -- python -c "import dl4bi_sps"
 ```

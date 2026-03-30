@@ -37,7 +37,7 @@ conflicts = [
 extend-select = ["I"]
 
 [tool.setuptools.packages.find]
-include = ["sps*"]
+include = ["dl4bi_sps*"]
 exclude = ["tests*"]
 
 [build-system]

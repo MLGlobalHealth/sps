@@ -14,7 +14,7 @@ from .utils import inv_dist_sq_kernel
 
 @dataclass
 class LatticeSIR:
-    """A Susceptible-Infected-Recovered (SIR) model simulated on a lattice.
+    """Susceptible-infected-recovered simulator on a lattice.
 
     Args:
         beta: A prior over the infection rate.
@@ -22,9 +22,6 @@ class LatticeSIR:
         num_init: A prior over the initial number of infected (nearest integer is used).
         kernel_width: Width of inverse distance weighted convolutional kernel
             used for transmission.
-
-    Returns:
-        An instance of the `LatticeSIR` dataclass.
     """
 
     beta: Prior = Prior("beta", {"a": 2.0, "b": 8.0})
@@ -38,7 +35,32 @@ class LatticeSIR:
         dims: Tuple[int, int] = (64, 64),
         num_steps: int = 25,
     ):
-        """Simulate `num_steps` of SIR model on a lattice of `dims`."""
+        r"""Simulate an SIR trajectory on a lattice.
+
+        Susceptible sites become infected with probability
+
+        $$
+        \Pr(S \to I) = \beta \, \nu(x),
+        $$
+
+        and infected sites recover with probability
+
+        $$
+        \Pr(I \to R) = \gamma,
+        $$
+
+        where `\nu(x)` is the inverse-distance-weighted infected neighbor sum
+        at lattice site `x`.
+
+        Args:
+            rng: Pseudo-random key.
+            dims: Lattice dimensions as `(height, width)`.
+            num_steps: Number of transitions to simulate.
+
+        Returns:
+            Tuple of lattice states over time, sampled infection rate, sampled
+            recovery rate, and the sampled number of initial infections.
+        """
         rng_num_init, rng = random.split(rng)
         # WARNING: this will create a separate cached jitted function
         # for each num_init possible; this is also why we don't sample
@@ -66,6 +88,21 @@ def _simulate(
     gamma_prior: Prior,
     kernel_width: int,
 ):
+    """Run the jitted SIR simulation loop.
+
+    Args:
+        rng: Pseudo-random key.
+        dims: Lattice dimensions as `(height, width)`.
+        num_init: Number of initially infected sites.
+        num_steps: Number of transitions to simulate.
+        beta_prior: Prior over the infection rate.
+        gamma_prior: Prior over the recovery rate.
+        kernel_width: Width of the inverse-distance kernel.
+
+    Returns:
+        Tuple of lattice states over time, sampled infection rate, sampled
+        recovery rate, and the number of initial infections.
+    """
     rng_beta, rng_gamma, rng_init, *rng_steps = random.split(rng, 3 + num_steps - 1)
     beta = beta_prior.sample(rng_beta)
     gamma = gamma_prior.sample(rng_gamma)
@@ -76,6 +113,15 @@ def _simulate(
 
     @jit
     def step(state: jax.Array, rng: jax.Array):
+        """Advance the SIR state by one time step.
+
+        Args:
+            state: Current lattice state.
+            rng: Pseudo-random key for this transition.
+
+        Returns:
+            Updated state as both the next carry and emitted scan value.
+        """
         neighbor_sum = conv_general_dilated(
             jnp.float32(state == 1.0)[None, None, :, :],  # infected only
             kernel,

@@ -8,38 +8,45 @@ from jax.tree_util import Partial
 
 @dataclass
 class Prior:
-    """Represents a prior using `jax.random` distributions.
+    """Parameterized random prior backed by `jax.random`.
 
     Args:
-        dist: A distribution name from `jax.random` or `kernels` submodule.
-        kwargs: A dict of the parameters for the given distribution.
-
-    Returns:
-        An instance of the Prior dataclass.
+        dist: Distribution name from this module or `jax.random`.
+        kwargs: Keyword arguments bound to the distribution function.
     """
 
     dist: str
     kwargs: dict[str, float]
 
     def __post_init__(self):
+        """Resolve and partially apply the configured distribution function."""
         dist_func = globals().get(self.dist, getattr(random, self.dist, None))
         self.dist_func = Partial(dist_func, **self.kwargs)
 
     def __hash__(self):
+        """Return a stable hash based on the distribution configuration."""
         return hash((self.dist, repr(self.kwargs)))
 
     def __eq__(self, other):
+        """Compare priors by their hashed distribution configuration.
+
+        Args:
+            other: Object to compare against.
+
+        Returns:
+            Whether the two prior configurations are equal.
+        """
         return hash(self) == hash(other)
 
     def sample(self, rng: Array, shape: Sequence[int] = (1,)) -> Array:
-        """Samples this prior.
+        """Sample from the configured prior.
 
         Args:
-            rng: A psuedo-random number generator from `jax.random`.
-            shape: Output shape of sample(s).
+            rng: Pseudo-random key from `jax.random`.
+            shape: Output shape of the samples.
 
         Returns:
-            A sample of shape `shape`.
+            Sample array with shape `shape`.
         """
         return self.dist_func(rng, shape=shape)
 
@@ -52,16 +59,20 @@ def normal(
     sigma: float,
     shape: Sequence[int],
 ) -> Array:
-    """Normal distribution parameterized by `mu` and `sigma`.
+    r"""Sample from a normal distribution parameterized by mean and stddev.
+
+    $$
+    X \sim \mathcal{N}(\mu, \sigma^2)
+    $$
 
     Args:
-        rng: A psuedo-random number generator from `jax.random`.
-        mu: Location, or center of distribution.
+        rng: Pseudo-random key from `jax.random`.
+        mu: Mean of the distribution.
         sigma: Standard deviation.
-        shape: Output shape of sample(s).
+        shape: Output shape of the samples.
 
     Returns:
-        A sample of shape `shape`.
+        Sample array with shape `shape`.
     """
     return mu + sigma * random.normal(rng, shape)
 
@@ -73,15 +84,20 @@ def exponential(
     lam: float,
     shape: Sequence[int],
 ) -> Array:
-    """Exponential parameterized by lambda `lam`.
+    r"""Sample from an exponential distribution parameterized by rate.
+
+    $$
+    X \sim \operatorname{Exp}(\lambda), \quad
+    f(x) = \lambda e^{-\lambda x}
+    $$
 
     Args:
-        rng: A psuedo-random number generator from `jax.random`.
-        lam: Lambda of exponential distribution.
-        shape: Output shape of sample(s).
+        rng: Pseudo-random key from `jax.random`.
+        lam: Rate parameter of the exponential distribution.
+        shape: Output shape of the samples.
 
     Returns:
-        A sample of shape `shape`.
+        Sample array with shape `shape`.
     """
     return 1 / lam * random.exponential(rng, shape)
 
@@ -94,16 +110,21 @@ def gamma(
     beta: float,  # rate
     shape: Sequence[int],
 ) -> Array:
-    """Gamma parameterized by `alpha` (shape) and `beta` (rate).
+    r"""Sample from a gamma distribution parameterized by shape and rate.
+
+    $$
+    X \sim \operatorname{Gamma}(\alpha, \beta), \quad
+    f(x) \propto x^{\alpha - 1} e^{-\beta x}
+    $$
 
     Args:
-        rng: A psuedo-random number generator from `jax.random`.
-        alpha: The standard shape parameters.
+        rng: Pseudo-random key from `jax.random`.
+        alpha: Shape parameter.
         beta: The rate parameter.
-        shape: Output shape of sample(s).
+        shape: Output shape of the samples.
 
     Returns:
-        A sample of shape `shape`.
+        Sample array with shape `shape`.
     """
     return random.gamma(rng, alpha, shape) / beta
 
@@ -116,16 +137,18 @@ def inverse_gamma(
     beta: float,
     shape: Sequence[int],
 ) -> Array:
-    """Inverse-Gamma parameterized by `alpha` (shape) and `beta` (rate).
+    r"""Sample from an inverse-gamma distribution.
+
+    This implementation samples `Y ~ Gamma(alpha, beta)` and returns `1 / Y`.
 
     Args:
-        rng: A psuedo-random number generator from `jax.random`.
-        alpha: The standard shape parameters.
-        beta: The rate parameter.
-        shape: Output shape of sample(s).
+        rng: Pseudo-random key from `jax.random`.
+        alpha: Shape parameter.
+        beta: Rate parameter.
+        shape: Output shape of the samples.
 
     Returns:
-        A sample of shape `shape`.
+        Sample array with shape `shape`.
     """
     return 1 / gamma(rng, alpha, beta, shape)
 
@@ -135,14 +158,16 @@ def fixed(
     value: float,
     shape: Sequence[int],
 ) -> Array:
-    """Fixed distribution.
+    """Return a constant-valued sample array.
+
+    This behaves like a degenerate distribution concentrated at `value`.
 
     Args:
-        rng: A psuedo-random number generator from `jax.random`.
-        value: A fixed value to return for all samples.
-        shape: Output shape of sample(s).
+        rng: Unused pseudo-random key kept for API compatibility.
+        value: Scalar value to broadcast across the sample.
+        shape: Output shape of the samples.
 
     Returns:
-        A fixed sample of shape `shape`.
+        Constant array with shape `shape`.
     """
     return jnp.full(shape, value)

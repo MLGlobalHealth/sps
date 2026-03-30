@@ -12,6 +12,15 @@ from .priors import Prior
 
 @dataclass(frozen=True)
 class PopGenState:
+    """Immutable state container for the population genetics simulator.
+
+    Attributes:
+        migration: Migration rate scalar.
+        mutation: Mutation rate scalar.
+        population: Population size per deme.
+        prevalence: Current prevalence field with shape `[B, C, H, W]`.
+    """
+
     migration: Array  # [1]
     mutation: Array  # [1]
     population: Array  # [1]
@@ -27,15 +36,12 @@ jax.tree_util.register_pytree_node(
 
 @dataclass
 class PopGen:
-    """A Population Genetics simulator on a lattice.
+    """Population genetics simulator on a lattice.
 
     Args:
         migration: A prior over the migration rate.
         mutation: A prior over the mutation rate.
         population: A prior over the population size per deme.
-
-    Returns:
-        An instance of the `PopGen` dataclass.
     """
 
     migration: Prior = Prior("uniform", {"minval": 10**-3.3, "maxval": 10**-1.3})
@@ -53,17 +59,24 @@ class PopGen:
         wrap_edges: bool = True,
         state: Optional[PopGenState] = None,
     ):
-        """
+        r"""Simulate allele prevalence trajectories on a lattice.
+
+        Each step applies spatial migration, mutation toward the symmetric
+        equilibrium `0.5`, and then binomial genetic drift.
+
         Args:
-            rng: Random number key.
+            rng: Pseudo-random key.
             num_warmup: Number of warmup steps (thrown away).
             num_steps: Total number of steps kept at the end.
             step_interval: Number of steps to skip between kept steps.
             batch_size: Number of sequences of steps to keep.
-            dims: Surface deme dimensions, HxW.
-            wrap_edges: Connect the top and bottom and left and right
-                sides of the surface.
-            state: Continue from this `PopGenState`.
+            dims: Surface deme dimensions as `(height, width)`.
+            wrap_edges: Whether the lattice uses wraparound boundaries.
+            state: Optional state to continue simulating from.
+
+        Returns:
+            Tuple of prevalence trajectories with shape `[B, C, T, H, W]`
+            and the final simulation state.
         """
         if state is None:
             rng_mi, rng_mu, rng_po, rng = random.split(rng, 4)
@@ -99,8 +112,18 @@ def _simulate(
     step_interval: int,
     wrap_edges: bool = True,
 ):
-    """
-    Simulate evolution under a lattice model assuming two alleles.
+    """Run the jitted population genetics simulation loop.
+
+    Args:
+        rng: Pseudo-random key.
+        state: Initial simulation state.
+        num_warmup: Number of steps discarded before collecting outputs.
+        num_steps: Number of states to record.
+        step_interval: Number of simulation steps between recorded states.
+        wrap_edges: Whether the lattice uses wraparound boundaries.
+
+    Returns:
+        Tuple of recorded prevalences and the final simulation state.
     """
     migration = state.migration
     mutation = state.mutation
@@ -110,6 +133,15 @@ def _simulate(
     buffer = jnp.zeros((T, B, C, H, W))
 
     def step(carry, i):
+        """Advance the prevalence state by one simulation step.
+
+        Args:
+            carry: Tuple containing the RNG key, output buffer, and prevalence.
+            i: Current step index.
+
+        Returns:
+            Updated carry tuple and a dummy scan output.
+        """
         rng, buffer, prevalence = carry
         rng, rng_step = random.split(rng)
         prevalence = _migrate_and_mutate(migration, mutation, prevalence, wrap_edges)
@@ -136,14 +168,25 @@ def _migrate_and_mutate(
     prevalence: Array,  # [B, C, H, W]
     wrap_edges: bool = True,
 ):
-    """
-    Compute migration and mutation.
+    r"""Apply one migration-plus-mutation update to the lattice.
 
-    .. note::
-        `wrap_edges` specifies that the left hand side wraps over to the
-        right, and same with top and bottom of the image. If `False`, this uses
-        reflective boundary conditions, which means each edge is padded with a
-        mirrored version of the data.
+    The update is
+
+    $$
+    p' = (K_m * p)(1 - \mu) + 0.5\mu,
+    $$
+
+    where `K_m` is the local migration kernel, `*` denotes convolution, and
+    `\mu` is the mutation rate.
+
+    Args:
+        migration: Migration rate scalar.
+        mutation: Mutation rate scalar.
+        prevalence: Current prevalence field with shape `[B, C, H, W]`.
+        wrap_edges: Whether to use wraparound instead of edge padding.
+
+    Returns:
+        Updated prevalence field with the same shape as `prevalence`.
     """
     k_neighbor = jnp.array(
         [

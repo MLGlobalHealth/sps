@@ -7,11 +7,16 @@ from jax import random
 from matplotlib.animation import FuncAnimation
 from matplotlib.colors import ListedColormap
 
-from sps.priors import Prior
-from sps.sir import LatticeSIR
+from dl4bi_sps.priors import Prior
+from dl4bi_sps.sir import LatticeSIR
 
 
 def main(args):
+    """Animate a sampled SIR trajectory on a lattice.
+
+    Args:
+        args: Parsed command-line arguments.
+    """
     rng = random.key(args.seed)
     dims = (args.dim, args.dim)
     beta = Prior("beta", {"a": 2, "b": 8})  # transmission prior
@@ -29,6 +34,14 @@ def main(args):
     img = ax.imshow(steps[0], cmap=cmap, norm=norm, interpolation="nearest")
 
     def update(i):
+        """Update the displayed frame in the lattice animation.
+
+        Args:
+            i: Frame index.
+
+        Returns:
+            Tuple containing the updated artist.
+        """
         img.set_data(steps[i])
         ax.set_title(
             f"Time Step: {i} (beta: {beta:.3f}, gamma: {gamma:.3f}, num_init: {num_init})"
@@ -41,6 +54,14 @@ def main(args):
 
 
 def parse_args(argv):
+    """Parse command-line arguments for the SIR animation.
+
+    Args:
+        argv: Raw command-line arguments.
+
+    Returns:
+        Parsed argument namespace.
+    """
     parser = argparse.ArgumentParser(
         prog=argv[0],
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,

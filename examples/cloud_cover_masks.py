@@ -4,10 +4,10 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from jax import random
 
-from sps.gp import GP
-from sps.kernels import matern_1_2
-from sps.priors import Prior
-from sps.utils import build_grid
+from dl4bi_sps.gp import GP
+from dl4bi_sps.kernels import matern_1_2
+from dl4bi_sps.priors import Prior
+from dl4bi_sps.utils import build_grid
 
 rng = random.key(42)
 B = 16

@@ -6,18 +6,23 @@ import imageio
 import numpy as np
 from jax import random
 
-from sps.popgen import PopGen
-from sps.priors import Prior
+from dl4bi_sps.popgen import PopGen
+from dl4bi_sps.priors import Prior
 
 
 def main(args):
+    """Render a population genetics trajectory as an animated GIF.
+
+    Args:
+        args: Parsed command-line arguments.
+    """
     rng = random.key(args.seed)
     migration = Prior("fixed", {"value": 0.001})
     mutation = Prior("fixed", {"value": 0.0001})
     population = Prior("fixed", {"value": 1000})
     batch_size, wrap_edges = 1, True
     popgen = PopGen(migration, mutation, population)
-    prevalences, _ = popgen.simulate(  # [B=1, T, C, H, W]
+    prevalences, _ = popgen.simulate(  # [B=1, C, T, H, W]
         rng,
         args.num_warmup,
         args.num_steps,
@@ -32,6 +37,14 @@ def main(args):
 
 
 def parse_args(argv):
+    """Parse command-line arguments for GIF generation.
+
+    Args:
+        argv: Raw command-line arguments.
+
+    Returns:
+        Parsed argument namespace.
+    """
     parser = argparse.ArgumentParser(
         prog=argv[0],
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,

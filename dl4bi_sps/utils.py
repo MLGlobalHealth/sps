@@ -13,28 +13,29 @@ def build_grid(
     ],
     dtype: jnp.dtype = jnp.float32,
 ) -> jax.Array:
-    """Builds a grid of shape `[..., D]` along the axes using `jnp.linspace`.
+    """Build a dense mesh grid from axis specifications.
 
     Args:
-        axes: A list of dicts, each with keys `start`, `stop`, and `num`, which
-            are passed to `jnp.linspace`.
+        axes: Sequence of dictionaries with `start`, `stop`, and `num`
+            arguments for `jnp.linspace`.
+        dtype: Dtype used when constructing each axis.
 
     Returns:
-        A mesh grid across those axes.
+        Mesh grid with shape `[..., D]`.
     """
     pts = [jnp.linspace(**axis, dtype=dtype) for axis in axes]
     return jnp.stack(jnp.meshgrid(*pts, indexing="ij"), axis=-1)
 
 
 def scale_grid(grid: ArrayLike, factor: int) -> jax.Array:
-    """Scales the `grid` of shape `[..., D]` by `factor` along all axes.
+    """Upsample a grid uniformly along every axis.
 
     Args:
-        grid: A mesh grid.
-        factor: A factor by which to scale each dimension of the grid.
+        grid: Grid with shape `[..., D]`.
+        factor: Multiplicative factor applied to each axis resolution.
 
     Returns:
-        A scaled grid.
+        Resampled grid with the same bounds as `grid`.
     """
     axes = [
         jnp.linspace(grid[..., dim].min(), grid[..., dim].max(), int(n * factor))
@@ -49,11 +50,16 @@ def random_subgrid(
     min_axes_pct: float = 0.05,
     max_axes_pct: float = 1.0,
 ):
-    """Create a random subgrid from `axes` at the same resolution.
+    """Create a random subgrid at the original axis resolution.
 
-    .. warning::
-        This method assumes that the `start` points always comes before the
-        `stop` point on the real number line.
+    Args:
+        rng: Pseudo-random key.
+        axes: Axis specifications defining the full domain.
+        min_axes_pct: Minimum side-length fraction for the sampled subgrid.
+        max_axes_pct: Maximum side-length fraction for the sampled subgrid.
+
+    Returns:
+        Randomly positioned subgrid with the same per-axis sample counts.
     """
     D = len(axes)
     rng_width, rng_shift = random.split(rng)
@@ -77,6 +83,22 @@ def random_subgrid(
 
 @partial(jit, static_argnames=("width",))
 def inv_dist_sq_kernel(width: int = 7):
+    r"""Build an inverse-distance-squared convolution kernel.
+
+    For offsets `(i, j) != (0, 0)`, the kernel entry is proportional to
+
+    $$
+    \frac{1}{i^2 + j^2},
+    $$
+
+    with the center entry set to zero.
+
+    Args:
+        width: Side length of the square kernel.
+
+    Returns:
+        Kernel with the center entry set to zero contribution.
+    """
     center = width // 2
     x = y = jnp.arange(width) - center
     xx, yy = jnp.meshgrid(x, y)

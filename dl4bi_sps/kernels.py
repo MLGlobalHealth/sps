@@ -5,14 +5,14 @@ from jax.typing import ArrayLike
 
 @jit
 def _prepare_dims(x: ArrayLike, y: ArrayLike) -> tuple[ArrayLike, ArrayLike]:
-    """Prepares dims for use in kernel functions.
+    """Flatten input locations into two-dimensional point matrices.
 
     Args:
-        x: Input array of size `[..., D]`.
-        y: Input array of size `[..., D]`.
+        x: Input array with shape `[..., D]`.
+        y: Input array with shape `[..., D]`.
 
     Returns:
-        `[N_x, D]` and `[N_y, D]` arrays.
+        Tuple of arrays with shapes `[N_x, D]` and `[N_y, D]`.
     """
     if x.ndim == 1:
         x = x[:, jnp.newaxis]
@@ -25,18 +25,18 @@ def _prepare_dims(x: ArrayLike, y: ArrayLike) -> tuple[ArrayLike, ArrayLike]:
 
 @jit
 def l2_dist_sq(x: ArrayLike, y: ArrayLike) -> ArrayLike:
-    r"""Squared L2 distance between two [..., D] arrays.
+    """Compute pairwise squared Euclidean distances.
 
-    .. note::
-        This is more numerically stable than the factorization
-        trick: ||a + b||^2 = ||a||^2 + ||b||^2 - 2*||a||*||b||.
+    Notes:
+        This is more numerically stable than expanding
+        `||a - b||^2 = ||a||^2 + ||b||^2 - 2 a^\top b`.
 
     Args:
-        x: Input array of size `[..., D]`.
-        y: Input array of size `[..., D]`.
+        x: Input array with shape `[..., D]`.
+        y: Input array with shape `[..., D]`.
 
     Returns:
-        Matrix of all pairwise distances.
+        Matrix of pairwise squared distances.
     """
     x, y = _prepare_dims(x, y)
     d = x[:, None, :] - y[None, :, :]
@@ -45,14 +45,14 @@ def l2_dist_sq(x: ArrayLike, y: ArrayLike) -> ArrayLike:
 
 @jit
 def l2_dist(x: ArrayLike, y: ArrayLike) -> ArrayLike:
-    r"""L2 distance between two [..., D] arrays.
+    """Compute pairwise Euclidean distances.
 
     Args:
-        x: Input array of size `[..., D]`.
-        y: Input array of size `[..., D]`.
+        x: Input array with shape `[..., D]`.
+        y: Input array with shape `[..., D]`.
 
     Returns:
-        Matrix of all pairwise distances.
+        Matrix of pairwise distances.
     """
     x, y = _prepare_dims(x, y)
     d = x[:, None, :] - y[None, :, :]
@@ -66,16 +66,21 @@ def rbf(
     var: float,
     ls: float,
 ) -> ArrayLike:
-    r"""Radial Basis kernel, aka Squared Exponential kernel.
+    r"""Compute the radial basis function kernel matrix.
 
-    $K(x, y) = \text{var}\cdot\exp\left(-\frac{\lVert x-y\rVert^2}{2\text{ls}^2}\right)$
+    $$
+    K(x, y) = \mathrm{var} \cdot
+    \exp\left(-\frac{\lVert x-y \rVert^2}{2\mathrm{ls}^2}\right)
+    $$
 
     Args:
-        x: Input array of size `[..., D]`.
-        y: Input array of size `[..., D]`.
+        x: Input array with shape `[..., D]`.
+        y: Input array with shape `[..., D]`.
+        var: Marginal variance.
+        ls: Lengthscale.
 
     Returns:
-        A covariance matrix.
+        Covariance matrix between `x` and `y`.
     """
     return var * jnp.exp(-l2_dist_sq(x, y) / (2 * ls**2))
 
@@ -88,16 +93,25 @@ def periodic(
     ls: float,
     period: float = 0.5,  # 2 cycles on unit interval
 ) -> ArrayLike:
-    r"""Periodic kernel.
+    r"""Compute the periodic kernel matrix.
 
-    $K(x, y) = \text{var}\cdot\exp\left(-\frac{2\sin^2\frac{\left(\pi\lVert x-y\rVert\right)}{\text{period}}}{\text{ls}^2}\right)$
+    $$
+    K(x, y) = \mathrm{var} \cdot
+    \exp\left(
+        -\frac{2 \sin^2\left(\pi \lVert x-y \rVert / \mathrm{period}\right)}
+        {\mathrm{ls}^2}
+    \right)
+    $$
 
     Args:
-        x: Input array of size `[..., D]`.
-        y: Input array of size `[..., D]`.
+        x: Input array with shape `[..., D]`.
+        y: Input array with shape `[..., D]`.
+        var: Marginal variance.
+        ls: Lengthscale.
+        period: Period of the kernel.
 
     Returns:
-        A covariance matrix.
+        Covariance matrix between `x` and `y`.
     """
     x, y = _prepare_dims(x, y)
     return var * jnp.exp(-2 / ls**2 * jnp.sin(jnp.pi * jnp.abs(x - y.T) / period) ** 2)
@@ -110,16 +124,21 @@ def exponential(
     var: float,
     ls: float,
 ) -> ArrayLike:
-    r"""Exponential kernel. Alias of Matern 1/2 kernel.
+    r"""Compute the exponential kernel matrix.
 
-    $K(x, y) = \text{var}\cdot\left(-\frac{\lVert x-y\rVert}{\text{ls}}\right)$
+    $$
+    K(x, y) = \mathrm{var} \cdot
+    \exp\left(-\frac{\lVert x-y \rVert}{\mathrm{ls}}\right)
+    $$
 
     Args:
-        x: Input array of size `[..., D]`.
-        y: Input array of size `[..., D]`.
+        x: Input array with shape `[..., D]`.
+        y: Input array with shape `[..., D]`.
+        var: Marginal variance.
+        ls: Lengthscale.
 
     Returns:
-        A covariance matrix.
+        Covariance matrix between `x` and `y`.
     """
     return matern_1_2(x, y, var, ls)
 
@@ -131,16 +150,21 @@ def matern_1_2(
     var: float,
     ls: float,
 ) -> ArrayLike:
-    r"""Matern 1/2 kernel.
+    r"""Compute the Matern 1/2 kernel matrix.
 
-    $K(x, y) = \text{var}\cdot\left(-\frac{\lVert x-y\rVert}{\text{ls}}\right)$
+    $$
+    K(x, y) = \mathrm{var} \cdot
+    \exp\left(-\frac{\lVert x-y \rVert}{\mathrm{ls}}\right)
+    $$
 
     Args:
-        x: Input array of size `[..., D]`.
-        y: Input array of size `[..., D]`.
+        x: Input array with shape `[..., D]`.
+        y: Input array with shape `[..., D]`.
+        var: Marginal variance.
+        ls: Lengthscale.
 
     Returns:
-        A covariance matrix.
+        Covariance matrix between `x` and `y`.
     """
     x, y = _prepare_dims(x, y)
     return var * jnp.exp(-l2_dist(x, y) / ls)
@@ -153,16 +177,22 @@ def matern_3_2(
     var: float,
     ls: float,
 ) -> ArrayLike:
-    r"""Matern 3/2 kernel.
+    r"""Compute the Matern 3/2 kernel matrix.
 
-    $K(x, y) = \text{var}\cdot\left(1 + \frac{\sqrt{3}\lVert x-y\rVert}{\text{ls}}\right)\cdot\exp\left(-\frac{\sqrt{3}\lVert x-y\rVert}{\text{ls}}\right)$
+    $$
+    K(x, y) = \mathrm{var} \cdot
+    \left(1 + \frac{\sqrt{3}\lVert x-y \rVert}{\mathrm{ls}}\right)
+    \exp\left(-\frac{\sqrt{3}\lVert x-y \rVert}{\mathrm{ls}}\right)
+    $$
 
     Args:
-        x: Input array of size `[..., D]`.
-        y: Input array of size `[..., D]`.
+        x: Input array with shape `[..., D]`.
+        y: Input array with shape `[..., D]`.
+        var: Marginal variance.
+        ls: Lengthscale.
 
     Returns:
-        A covariance matrix.
+        Covariance matrix between `x` and `y`.
     """
     d = l2_dist(x, y)
     sqrt3 = 3.0 ** (1 / 2)
@@ -176,16 +206,26 @@ def matern_5_2(
     var: float,
     ls: float,
 ) -> ArrayLike:
-    r"""Matern 5/2 kernel.
+    r"""Compute the Matern 5/2 kernel matrix.
 
-    $K(x, y) = \text{var}\cdot\left(1 + \frac{\sqrt{5}\lVert x-y\rVert}{\text{ls}} + \frac{5}{3}\cdot\frac{\lVert x-y\rVert^2}{\text{ls}^2}\right)\cdot\exp\left(-\frac{\sqrt{5}\lVert x-y\rVert}{\text{ls}}\right)$
+    $$
+    K(x, y) = \mathrm{var} \cdot
+    \left(
+        1
+        + \frac{\sqrt{5}\lVert x-y \rVert}{\mathrm{ls}}
+        + \frac{5\lVert x-y \rVert^2}{3\mathrm{ls}^2}
+    \right)
+    \exp\left(-\frac{\sqrt{5}\lVert x-y \rVert}{\mathrm{ls}}\right)
+    $$
 
     Args:
-        x: Input array of size `[..., D]`.
-        y: Input array of size `[..., D]`.
+        x: Input array with shape `[..., D]`.
+        y: Input array with shape `[..., D]`.
+        var: Marginal variance.
+        ls: Lengthscale.
 
     Returns:
-        A covariance matrix.
+        Covariance matrix between `x` and `y`.
     """
     d = l2_dist(x, y)
     dsq = jnp.square(d)
@@ -195,20 +235,18 @@ def matern_5_2(
 
 @jit
 def great_circle_dist(x: ArrayLike, y: ArrayLike) -> ArrayLike:
-    r"""Great circle distance on a sphere between two [..., 2] arrays.
-
-    Inputs are assumed to be pairs of (longitude, latitude) in degrees,
-    outputs are also returned in degrees.
+    """Compute pairwise great-circle distances on a sphere.
 
     Args:
-        x: Input array of size `[..., 2]`.
-        y: Input array of size `[..., 2]`.
+        x: Longitude-latitude pairs with shape `[..., 2]` in degrees.
+        y: Longitude-latitude pairs with shape `[..., 2]` in degrees.
 
     Returns:
-        Matrix of all pairwise distances.
+        Matrix of pairwise distances in degrees.
     """
 
     def d(x, y):
+        """Compute the great-circle distance between two points."""
         x_lon, x_lat = x
         y_lon, y_lat = y
         x_lon, x_lat, y_lon, y_lat = map(jnp.deg2rad, (x_lon, x_lat, y_lon, y_lat))
@@ -240,15 +278,20 @@ def geo_exponential(
     var: float,
     ls: float,
 ) -> ArrayLike:
-    r"""Geodesic exponential kernel, that is an exponential kernel with great circle distance.
+    r"""Compute an exponential kernel using great-circle distance.
 
-    $K(x, y) = \text{var}\cdot\exp\left(-\frac{\lVert x-y\rVert}_{geo}{\text{ls}}\right)$
+    $$
+    K(x, y) = \mathrm{var} \cdot
+    \exp\left(-\frac{d_{\mathrm{gc}}(x, y)}{\mathrm{ls}}\right)
+    $$
 
     Args:
-        x: Input array of size `[..., 2]`.
-        y: Input array of size `[..., 2]`.
+        x: Longitude-latitude pairs with shape `[..., 2]` in degrees.
+        y: Longitude-latitude pairs with shape `[..., 2]` in degrees.
+        var: Marginal variance.
+        ls: Geodesic lengthscale.
 
     Returns:
-        A covariance matrix.
+        Covariance matrix between `x` and `y`.
     """
     return var * jnp.exp(-great_circle_dist(x, y) / ls)
