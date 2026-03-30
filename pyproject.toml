@@ -1,6 +1,6 @@
 [project]
 name = "dl4bi-sps"
-version = "0.1.1"
+version = "0.1.2"
 description = "Deep Learning for Bayesian Inference: Stochastic Process Simulators"
 authors = [{ name = "Daniel Jenson", email = "daniel.a.jenson@gmail.com" }]
 readme = "README.md"
