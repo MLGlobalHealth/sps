@@ -1,12 +1,12 @@
 # Stochastic Process Simulators (sps)
 
 ## Install
-Install with the appropriate command. If JAX isn't installed already, we recommend using one of the `sps[<jax-version>]` installs.
+Install with the appropriate command. If JAX isn't installed already, we recommend using one of the `dl4bi-sps[<jax-version>]` installs. The distribution name is `dl4bi-sps`, while the import remains `sps`.
 ```bash
-pip install sps # sps
-pip install sps[cpu] # sps + jax for CPU
-pip install sps[cuda12] # sps + jax for CUDA-12
-pip install sps[cuda13] # sps + jax for CUDA-13
+pip install dl4bi-sps # import sps
+pip install dl4bi-sps[cpu] # import sps + jax for CPU
+pip install dl4bi-sps[cuda12] # import sps + jax for CUDA-12
+pip install dl4bi-sps[cuda13] # import sps + jax for CUDA-13
 ```
 
 ## View Documentation (Locally)
@@ -120,8 +120,8 @@ UV_PUBLISH_TOKEN=$PYPI_TOKEN uv publish
 
 5. Smoke-test the published install targets in fresh environments:
 ```bash
-uv run --isolated --with "sps==<version>" --no-project -- python -c "import sps"
-uv run --isolated --with "sps[cpu]==<version>" --no-project -- python -c "import sps"
-uv run --isolated --with "sps[cuda12]==<version>" --no-project -- python -c "import sps"
-uv run --isolated --with "sps[cuda13]==<version>" --no-project -- python -c "import sps"
+uv run --isolated --with "dl4bi-sps==<version>" --no-project -- python -c "import sps"
+uv run --isolated --with "dl4bi-sps[cpu]==<version>" --no-project -- python -c "import sps"
+uv run --isolated --with "dl4bi-sps[cuda12]==<version>" --no-project -- python -c "import sps"
+uv run --isolated --with "dl4bi-sps[cuda13]==<version>" --no-project -- python -c "import sps"
 ```
