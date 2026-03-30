@@ -1,18 +1,20 @@
 # Stochastic Process Simulators (sps)
 
 ## Install
-1. Install [jax](https://jax.readthedocs.io/en/latest/installation.html)
-2. Install the `sps` package from git:
+Install with the appropriate command. If JAX isn't installed already, we recommend using one of the `sps[<jax-version>]` installs.
 ```bash
-pip install -U --force-reinstall git+ssh://git@github.com/MLGlobalHealth/sps.git
+pip install sps # sps
+pip install sps[cpu] # sps + jax for CPU
+pip install sps[cuda12] # sps + jax for CUDA-12
+pip install sps[cuda13] # sps + jax for CUDA-13
 ```
 
 ## View Documentation (Locally)
 ```bash
-pip install pdoc
 git clone git@github.com:MLGlobalHealth/sps.git
 cd sps
-pdoc --docformat google --math sps
+uv sync --extra {cpu,cuda12,cuda13}
+uv run --with pdoc pdoc --docformat google --math sps
 ```
 
 ## Demo
@@ -69,35 +71,57 @@ s = build_grid([{"start": 0, "stop": 1, "num": 64}] * 2) # 64x64 grid
 More examples can be found [here](https://github.com/MLGlobalHealth/sps/tree/main/examples).
 
 ## Gotchas
-Small lengthscales can cause numerical instability; enabiling 64-bit floating
-operations can often help, but be warned that this will double memory usage.
+Small lengthscales can cause numerical instability. Enabling 64-bit floating
+operations often helps, but it roughly doubles memory usage and may reduce
+throughput on accelerators.
 ```python
-from jax import config
-config.update("jax_enable_x64", True)
-```
-You can also use the experimental context manager, which restricts 64-bit
-precision to the local execution block:
-```python
-from jax.experimental import enable_x64
-
-with enable_x64():
+import jax
+# use 64-bit precision globally
+jax.config.update("jax_enable_x64", True)
+# use 64-bit precision only inside this context manager
+with jax.enable_x64():
     # Do something in 64-bit precision
+    ...
 # Back to default 32-bit precision
 ```
 
 ## Development Setup
-- Install Python 3.12 with `pyenv`:
-    - Install `pyenv`: `curl https://pyenv.run | bash`
-    - Copy the lines it says to your `~/.bashrc` and reload `source ~/.bashrc`
-    - Install Python 3.12: `pyenv install 3.12`
-- Create a virtualenv called `sps-dev` using Python 3.12: `pyenv virtualenv 3.12 sps-dev`
+- Install [uv](https://docs.astral.sh/uv/).
 - Clone the repository and `cd` into it: `git clone git@github.com:MLGlobalHealth/sps.git && cd sps`
-- Inside the `sps` repository, tell `pyenv` to use the `sps-dev` virtualenv: `pyenv local sps-dev`
-    - `pyenv local sps-dev` creates a `.python-version` file that tells `pyenv`
-        to automatically activate the `sps-dev` virtualenv whenever you are
-        working in the `sps` repository, so all `python` and `pip` commands will
-        execute within the `sps-dev` virtualenv
-- Inside the `sps` directory, install the package to the `sps-dev` virtualenv: `pip install -e .`
-    - Installing this package locally means it is installed "live", i.e. it
-        immediately reflects any changes you make (this only needs to be done
-        once)
+- Install the pinned Python version if needed: `uv python install`
+- Sync the project, development dependencies, and one JAX extra: `uv sync --extra {cpu,cuda12,cuda13}`
+- Run the test suite: `uv run pytest`
+
+`uv sync` creates a local `.venv/` and installs the project in editable mode,
+so changes in `sps/` are reflected immediately.
+
+## Build and Publish to PyPI
+1. Bump the package version:
+```bash
+uv version --bump patch --frozen
+```
+
+2. Build the source distribution and wheel:
+```bash
+uv build --no-sources
+```
+
+3. Publish to TestPyPI first:
+```bash
+UV_PUBLISH_TOKEN=$TEST_PYPI_TOKEN uv publish \
+  --publish-url https://test.pypi.org/legacy/ \
+  --check-url https://test.pypi.org/simple/
+```
+
+4. After validating the release, publish the same artifacts to PyPI:
+```bash
+UV_PUBLISH_TOKEN=$PYPI_TOKEN uv publish
+```
+
+5. Smoke-test the published install targets in fresh environments:
+```bash
+uv run --isolated --with "sps==<version>" --no-project -- python -c "import sps"
+uv run --isolated --with "sps[cpu]==<version>" --no-project -- python -c "import sps"
+uv run --isolated --with "sps[cuda12]==<version>" --no-project -- python -c "import sps"
+uv run --isolated --with "sps[cuda13]==<version>" --no-project -- python -c "import sps"
+```
