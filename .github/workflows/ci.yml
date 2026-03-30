@@ -32,4 +32,4 @@ jobs:
         run: uv sync --locked --extra cpu
 
       - name: Run tests
-        run: uv run pytest -q --benchmark-disable
+        run: uv run pytest -q --benchmark-skip -vv

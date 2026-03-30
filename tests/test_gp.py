@@ -3,8 +3,7 @@ from functools import reduce
 
 import jax.numpy as jnp
 import pytest
-from jax import random
-from jax.experimental import enable_x64
+from jax import enable_x64, random
 
 from dl4bi_sps.gp import GP, _kronecker_Ls, _kronecker_mvprod
 from dl4bi_sps.kernels import matern_1_2, matern_3_2, matern_5_2, periodic, rbf
