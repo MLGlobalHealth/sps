@@ -96,32 +96,17 @@ with jax.enable_x64():
 so changes in `dl4bi_sps/` are reflected immediately.
 
 ## Build and Publish to PyPI
-1. Bump the package version:
-```bash
-uv version --bump patch --frozen
+Create a local `.env` file with the publish tokens:
+```env
+TEST_PYPI_TOKEN=pypi-...
+PYPI_TOKEN=pypi-...
 ```
 
-2. Build the source distribution and wheel:
+Run the release helper from a clean `main` checkout:
 ```bash
-uv build --no-sources
+uv run python scripts/release.py .env "Release notes"
 ```
 
-3. Publish to TestPyPI first:
-```bash
-UV_PUBLISH_TOKEN=$TEST_PYPI_TOKEN uv publish \
-  --publish-url https://test.pypi.org/legacy/ \
-  --check-url https://test.pypi.org/simple/
-```
-
-4. After validating the release, publish the same artifacts to PyPI:
-```bash
-UV_PUBLISH_TOKEN=$PYPI_TOKEN uv publish
-```
-
-5. Smoke-test the published install targets in fresh environments:
-```bash
-uv run --isolated --with "dl4bi-sps==<version>" --no-project -- python -c "import dl4bi_sps"
-uv run --isolated --with "dl4bi-sps[cpu]==<version>" --no-project -- python -c "import dl4bi_sps"
-uv run --isolated --with "dl4bi-sps[cuda12]==<version>" --no-project -- python -c "import dl4bi_sps"
-uv run --isolated --with "dl4bi-sps[cuda13]==<version>" --no-project -- python -c "import dl4bi_sps"
-```
+The helper bumps the patch version, commits and tags `v<version> <message>`,
+rebuilds `dist/`, publishes to TestPyPI and PyPI, pushes `main` and the tag,
+and smoke-tests the published install targets for `dl4bi-sps`.
